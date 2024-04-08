@@ -14,12 +14,14 @@ import (
 )
 
 func main() {
+
 	err := godotenv.Load()
 	if err != nil {
 		panic(err)
 	}
 	router := setUp()
 	router.Run()
+
 }
 
 /*ルーター等のセットアップ*/
@@ -36,19 +38,22 @@ func setUp() *gin.Engine {
 	//TODO: corsの設定
 	//serviceの設定
 	user_service := repository.NewUserService(db)
+	manifest_service := repository.NewManifestService(db)
 	//controllerの設定
 	user_controller := controllers.NewUserController(user_service)
+	manifest_controller := controllers.NewManifestController(manifest_service)
 	//routerの設定
 	api := router.Group("/api")
 	v1 := api.Group("/v1")
 	// /userと/authと/iiifだけはmiddlewareなしで通るように
 	v1.POST("/user", user_controller.CreateUser)
 	v1.POST("/auth", user_controller.Login)
-	//以下middlwareを使用するところ
+	//以下middlewareを使用するところ
 	service := v1.Group("/service")
 	service.Use(middleware.AuthMiddleware)
 	{
 		service.GET("/manifest", controllers.GetAllManifest)
+		service.POST("/manifest", manifest_controller.CreateManifest)
 	}
 
 	return router
